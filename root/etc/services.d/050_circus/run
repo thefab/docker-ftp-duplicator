@@ -1,0 +1,3 @@
+#!/usr/bin/with-contenv bash
+#circusd --log-level ${DUPLICATORFTP_CIRCUS_LEVEL} --log-output /var/log/circus.log /etc/circus.ini
+circusd --log-level info --log-output /var/log/circus.log /etc/circus.ini

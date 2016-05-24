@@ -1,0 +1,14 @@
+#!/usr/bin/with-contenv sh
+
+# Export environnement utile
+for var in `env | grep AUTOCLEAN`
+do
+  echo "export $var" >> /etc/env_duplicator
+done
+for var in `env | grep DUPLICATORFTP`
+do
+  echo "export $var" >> /etc/env_duplicator
+done
+
+# Creation commande cron avec environnement
+echo "* * * * * root . /etc/env_duplicator 1>/dev/null 2>/dev/null ; /usr/local/bin/manage_duplicator_ftp.py >>/var/log/manage_duplicator_ftp.log 2>&1" > /etc/cron.d/ftp_duplicator_manager

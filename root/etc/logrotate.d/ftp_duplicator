@@ -1,0 +1,13 @@
+/var/log/manage_duplicator_ftp.log
+/var/log/circus.log
+/var/log/sprinkler_*.stdout
+/var/log/sprinkler_*.stderr
+/var/log/carrier_*.stdout
+/var/log/carrier_*.stderr
+{
+    daily
+    rotate 7
+    nocompress
+    missingok
+    copytruncate
+}
