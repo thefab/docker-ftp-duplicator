@@ -6,16 +6,17 @@ MAINTAINER Jean-Baptiste VESLIN <jean-baptiste.veslin@meteo.fr>
 # PYTHONUNBUFFERED is important for circus watchers logs
 ENV DUPLICATORFTP_CONSUL=137.129.47.64:80 \
     DUPLICATORFTP_CIRCUS_LEVEL=error \
-    DUPLICATORFTP_CIRCUS_MAX_AGE=65 \
+    DUPLICATORFTP_CIRCUS_MAX_AGE=310 \
     DUPLICATORFTP_CIRCUS_MAX_AGE_VARIANCE=30 \
     DUPLICATORFTP_CIRCUS_GRACEFUL_TIMEOUT=30 \
-    DUPLICATORFTP_CARRIER_MAX_AGE=180 \
+    DUPLICATORFTP_WATCHER_MAX_AGE=3600 \
     DUPLICATORFTP_LOG_LEVEL=debug \
     AUTOCLEANFTP_USERS= \
     AUTOCLEANFTP_PASSWORDS= \
     AUTOCLEANFTP_UIDS= \
     AUTOCLEANFTP_LIFETIMES= \
     AUTOCLEANFTP_LEVEL=silent \
+    AUTOCLEANFTP_SYSLOG=0 \
     PYTHONUNBUFFERED=1
 
 # Add runtime dependencies
@@ -33,10 +34,6 @@ RUN /build/install_pip.sh
 # Install python modules with pip (circus, requests)
 ADD root/build/install_python_modules_with_pip.sh /build/install_python_modules_with_pip.sh
 RUN /build/install_python_modules_with_pip.sh
-
-# Build redis
-#ADD root/build/build_redis.sh /build/build_redis.sh
-#RUN /build/build_redis.sh
 
 # Add consul binaries
 ADD root/build/add_consul_binary.sh /build/add_consul_binary.sh

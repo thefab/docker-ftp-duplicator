@@ -13,7 +13,7 @@ import json
 import ftplib
 
 def now():
-    return(time.strftime("%Y%m%d %H%M", time.localtime(time.time())))
+    return(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 
 def signalHandler(signum, frame):
     print "%s : carrier.py receive signal %d" % (now(), signum)
@@ -77,7 +77,7 @@ signal.signal(signal.SIGHUP, signalHandler)
 signal.signal(signal.SIGINT, signalHandler)
 
 # Parametres
-Max_Age = int(os.environ.get("DUPLICATORFTP_CARRIER_MAX_AGE"))
+Max_Age = int(os.environ.get("DUPLICATORFTP_WATCHER_MAX_AGE"))
 
 Log_Level = os.environ.get("DUPLICATORFTP_LOG_LEVEL")
 
@@ -162,7 +162,7 @@ while True:
             # read notified events and enqeue them
             notifier.read_events()
         # you can do some tasks here...
-    except KeyboardInterrupt:
+    except :
         # destroy the inotify's instance on this interrupt (stop monitoring)
         notifier.stop()
         break

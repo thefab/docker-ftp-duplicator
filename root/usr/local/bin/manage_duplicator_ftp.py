@@ -16,7 +16,7 @@ import time
 # Il faudra mettre des securites partout (consul qui repond pas, etc...)
 
 def now():
-    return(time.strftime("%Y%m%d %H%M", time.localtime(time.time())))
+    return(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 
 def add_voie():
     prog = "/usr/local/bin/sprinkler.py"
@@ -39,6 +39,7 @@ def add_voie():
                       'Subscribers':subscribers,
                       'Circus_status':"None",
                       'Cmd':cmd})
+        watched_directories.append(voie)
 
 # Parametres circus
 Max_Age = int(os.environ.get("DUPLICATORFTP_CIRCUS_MAX_AGE"))
@@ -65,6 +66,7 @@ result = reply.json()
 voie = ''
 voies = []
 carriers = []
+watched_directories = []
 settings = {}
 for res in result:
     if res['Key'].startswith('ftp_duplicator/incoming_directories/'):
@@ -111,6 +113,7 @@ for res in result:
                     subscr2['Cmd'] = cmd
                     subscribers.append(subscr2.copy())
                     carriers.append(subscr2.copy())
+                    watched_directories.append(subscr2['Name'])
             else:
                 subscr['HostId'] = ''
                 subscr['Port'] = ''
@@ -123,6 +126,7 @@ for res in result:
                 subscr['Cmd'] = cmd
                 subscribers.append(subscr)
                 carriers.append(subscr)
+                watched_directories.append(subscr['Name'])
 
 # Ajout derniere voie
 add_voie()
@@ -155,15 +159,6 @@ os.system("/usr/local/bin/make_users_and_cron.py")
 if not os.path.isdir("/data/tmp"):
     print "%s : Directory /data/tmp created" % now()
     os.mkdir("/data/tmp")
-
-# Suppression des repertoires correspondant a des carriers ne tournant pas
-list_dir = fnmatch.filter(os.listdir("/data"),"*-*")
-list_carrier = os.popen("/usr/bin/circusctl list | grep carrier")\
-               .read().split(",")
-for dir in list_dir:
-    if "carrier_%s" % dir not in list_carrier:
-        shutil.rmtree("/data/%s" % dir, ignore_errors=True)
-        print "%s : Directory /data/%s removed" % (now(), dir)
 
 # Fabrication du nouveau fichier circus.ini
 with open('/tmp/circus.ini', 'w') as new_circus:
@@ -212,3 +207,24 @@ with open('/tmp/circus.ini', 'w') as new_circus:
 if filecmp.cmp('/tmp/circus.ini', '/etc/circus.ini') == False:
     shutil.move('/tmp/circus.ini', '/etc/circus.ini')
     os.system("/usr/bin/circusctl reloadconfig")
+
+# Nettoyage des users (sprinklers) et repertoires (sprinklers et carriers)
+# devenus obsoletes
+list_dir = os.listdir("/data")
+for dir in list_dir:
+    if dir != 'tmp':
+        if dir.rfind('-') >= 0:
+            # Repertoire correspondant a un carrier
+            # On le supprime s'il ne correspond a aucun carrier
+            if dir not in watched_directories:
+                shutil.rmtree("/data/%s" % dir, ignore_errors=True)
+                print "%s : Directory /data/%s removed" % (now(), dir)
+        else:
+            # Repertoire correspondant a un sprinkler
+            # On supprime le user et son arborescence s'il ne correspond a
+            # aucun sprinkler
+            if dir not in watched_directories:
+                os.system("/usr/sbin/userdel -r %s" % dir)
+                print "%s : User %s and Directory /data/%s removed" % (now(),
+                      dir, dir)
+

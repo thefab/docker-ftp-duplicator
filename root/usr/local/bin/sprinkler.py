@@ -14,7 +14,7 @@ import fnmatch
 import time
 
 def now():
-    return(time.strftime("%Y%m%d %H%M", time.localtime(time.time())))
+    return(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 
 def signalHandler(signum, frame):
     print "%s : sprinkler.py receive signal %d" % (now(), signum)
@@ -50,6 +50,8 @@ signal.signal(signal.SIGTERM, signalHandler)
 signal.signal(signal.SIGHUP, signalHandler)
 signal.signal(signal.SIGINT, signalHandler)
 
+# Parametres
+Max_Age = int(os.environ.get("DUPLICATORFTP_WATCHER_MAX_AGE"))
 Log_Level = os.environ.get("DUPLICATORFTP_LOG_LEVEL")
 
 Consul = os.environ.get("DUPLICATORFTP_CONSUL")
@@ -100,10 +102,19 @@ notifier = pyinotify.Notifier(wm, Monitor(), timeout=1000) #timeout de 1000ms su
 wdd = wm.add_watch(args.Incoming_directory, mask)
 print "%s : Start watching %s" % (now(), args.Incoming_directory)
 
-#list_files = os.listdir(args.Incoming_directory)
-#for file in list_files:
-#    os.rename("%s/%s" % (args.Incoming_directory, file), "/data/tmp/%s" % file)
-#    os.rename("/data/tmp/%s" % file, "%s/%s" % (args.Incoming_directory, file))
+# Recuperation des fichiers presents sur le repertoire a surveiller
+list_files = os.listdir(args.Incoming_directory)
+for file in list_files:
+    file_path = "%s/%s" % (args.Incoming_directory, file)
+    age = int(time.time() - os.stat(file_path).st_mtime)
+    if age > Max_Age:
+        # Fichier trop vieux : on le supprime
+        print "%s : File %s : abort transfer and remove" % (now(), file)
+        os.unlink(file_path)
+    else:
+        # On genere un evenement IN_MOVE par un double deplacement 
+        os.rename(file_path, "/data/tmp/%s" % file)
+        os.rename("/data/tmp/%s" % file, file_path)
 
 while True:
     try:
