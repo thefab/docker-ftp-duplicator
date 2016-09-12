@@ -58,6 +58,9 @@ reply = requests.get(url)
 if reply.status_code != 200:
     print "%s : Fatal Error : Consul return code %d" % (now(),
                                                         reply.status_code)
+    print "     You may need to create url http://%s/v1/kv/ftp_duplicator/" \
+          % Consul
+
     exit(1)
 
 result = reply.json()
@@ -82,54 +85,57 @@ for res in result:
             settings = {}
         if len(lsplit) == 4 and lsplit[3] == 'settings':
             setting_index = res['ModifyIndex']
-            settings = json.loads(base64.b64decode(res['Value']))
+            if res['Value'] != None:
+                settings = json.loads(base64.b64decode(res['Value']))
         if len(lsplit) == 5 and lsplit[4] != '':
-            subscr = json.loads(base64.b64decode(res['Value']))
-            subscr['Consul_kv'] = res['Key']
-            prog2 = "/usr/local/bin/carrier.py"
-            if subscr.has_key('consul_service'):
-                # Cas d'un service Consul correspondant a plusieurs machines 
-                url = "http://%s/v1/health/service/%s" \
-                      % (Consul, subscr['consul_service'])
-                reply2 = requests.get(url)
-                if reply2.status_code != 200:
-                    print "%s : Error : Consul return code %d" % (now(),
-                          reply2.status_code)
-                result2 = reply2.json()
-                for res2 in result2:
-                    subscr2 = subscr.copy()
-                    subscr2['HostId'] = res2['Service']['Address']
-                    subscr2['Port'] = res2['Service']['Port']
-                    subscr2['Name'] = "%s-%s-%s:%d" % (voie, lsplit[4],
-                                                       subscr2['HostId'],
-                                                       subscr2['Port'])
-                    subscr2['Modify_index'] = res2['Service']['ModifyIndex'] + \
-                                              res['ModifyIndex']
-                    subscr2['Directory'] = "/data/%s" % subscr2['Name']
-                    cmd = "%s %s %s %s --force_host=%s --force_port=%d" \
-                          % (prog2, subscr2['Modify_index'],
-                             subscr2['Consul_kv'], subscr2['Directory'],
-                             subscr2['HostId'], subscr2['Port'])
-                    subscr2['Cmd'] = cmd
-                    subscribers.append(subscr2.copy())
-                    carriers.append(subscr2.copy())
-                    watched_directories.append(subscr2['Name'])
-            else:
-                subscr['HostId'] = ''
-                subscr['Port'] = ''
-                subscr['Name'] = "%s-%s" %(voie, lsplit[4])
-                subscr['Modify_index'] = res['ModifyIndex']
-                subscr['Directory'] = "/data/%s" % subscr['Name']
-                cmd = "%s %s %s %s" \
-                          % (prog2, subscr['Modify_index'],
-                             subscr['Consul_kv'], subscr['Directory'])
-                subscr['Cmd'] = cmd
-                subscribers.append(subscr)
-                carriers.append(subscr)
-                watched_directories.append(subscr['Name'])
+            if res['Value'] != None:
+                subscr = json.loads(base64.b64decode(res['Value']))
+                subscr['Consul_kv'] = res['Key']
+                prog2 = "/usr/local/bin/carrier.py"
+                if subscr.has_key('consul_service'):
+                    # Cas d'un service Consul correspondant a plusieurs machines
+                    url = "http://%s/v1/health/service/%s" \
+                          % (Consul, subscr['consul_service'])
+                    reply2 = requests.get(url)
+                    if reply2.status_code != 200:
+                        print "%s : Error : Consul return code %d" % (now(),
+                              reply2.status_code)
+                    result2 = reply2.json()
+                    for res2 in result2:
+                        subscr2 = subscr.copy()
+                        subscr2['HostId'] = res2['Service']['Address']
+                        subscr2['Port'] = res2['Service']['Port']
+                        subscr2['Name'] = "%s-%s-%s:%d" % (voie, lsplit[4],
+                                                           subscr2['HostId'],
+                                                           subscr2['Port'])
+                        subscr2['Modify_index'] = \
+                            res2['Service']['ModifyIndex'] + res['ModifyIndex']
+                        subscr2['Directory'] = "/data/%s" % subscr2['Name']
+                        cmd = "%s %s %s %s --force_host=%s --force_port=%d" \
+                              % (prog2, subscr2['Modify_index'],
+                                 subscr2['Consul_kv'], subscr2['Directory'],
+                                 subscr2['HostId'], subscr2['Port'])
+                        subscr2['Cmd'] = cmd
+                        subscribers.append(subscr2.copy())
+                        carriers.append(subscr2.copy())
+                        watched_directories.append(subscr2['Name'])
+                else:
+                    subscr['HostId'] = ''
+                    subscr['Port'] = ''
+                    subscr['Name'] = "%s-%s" %(voie, lsplit[4])
+                    subscr['Modify_index'] = res['ModifyIndex']
+                    subscr['Directory'] = "/data/%s" % subscr['Name']
+                    cmd = "%s %s %s %s" \
+                              % (prog2, subscr['Modify_index'],
+                                 subscr['Consul_kv'], subscr['Directory'])
+                    subscr['Cmd'] = cmd
+                    subscribers.append(subscr)
+                    carriers.append(subscr)
+                    watched_directories.append(subscr['Name'])
 
 # Ajout derniere voie
-add_voie()
+if voie != '':
+    add_voie()
 
 # Creation des users
 users = ''
