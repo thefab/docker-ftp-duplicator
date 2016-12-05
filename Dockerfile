@@ -37,9 +37,7 @@ RUN /build/install_python_modules_with_pip.sh
 
 # Add consul binaries
 ADD root/build/add_consul_binary.sh /build/add_consul_binary.sh
-ADD root/build/add_consul_cli.sh /build/add_consul_cli.sh
-RUN /build/add_consul_binary.sh && \
-    /build/add_consul_cli.sh
+RUN /build/add_consul_binary.sh 
 
 # Remove build dependencies
 ADD root/build/remove_buildtime_dependencies.sh /build/remove_buildtime_dependencies.sh
