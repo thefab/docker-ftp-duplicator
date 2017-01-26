@@ -1,5 +1,6 @@
 # Documentation technique du container ftp-duplicator
 Auteur : Jean-Baptiste Veslin, email :  <jean-baptiste.veslin@meteo.fr>
+(in french, to be translated...)
 
 ## Introduction
 ftp-duplicator est une image docker permettant de dupliquer des fichiers arrivant par ftp sur des répertoires (voies ftp, appelées incoming_directories) vers d'autres containers ou machines abonnés (subscribers).
