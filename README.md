@@ -187,7 +187,7 @@ Le container définit plusieurs variables d'environnement (modifiables au lancem
 * DUPLICATORFTP_CONSUL_COLLECTD_SERVICE (optionnel) : identification du service collectd dans Consul
 * DUPLICATORFTP_HOSTNAME : (optionnel, en lien avec le précédent) : identification du hostname qui sera transmis à collectd (a priori le CONTAINER_NAME du container ftp_duplicator)
 * AUTOCLEANFTP_USERS, AUTOCLEANFTP_PASSWORDS, AUTOCLEANFTP_UIDS, AUTOCLEANFTP_LIFETIMES : doivent être vides au lancement, ne pas les modifier (mise à jour des variables d'environnement du container thefab/autoclean-vsftpd dont hérite ftpduplicator, ces variables seront modifiées "à la volée" au fonctionnement)
-* AUTOCLEANFTP_PASV_ADDRESS : à positionner à `hostname -i` (ip de la machine sur laquelle on lance le container ftpduplicator)
+* AUTOCLEANFTP_PASV_ADDRESS : à positionner à \`hostname -i\` (ip de la machine sur laquelle on lance le container ftpduplicator)
 * AUTOCLEANFTP_LEVEL=silent et AUTOCLEANFTP_SYSLOG=0 : ne pas modifier a priori
 * PYTHONUNBUFFERED=1 : nécessaire pour les watchers circus
 
@@ -195,8 +195,8 @@ Le container définit plusieurs variables d'environnement (modifiables au lancem
 (sur /var/log, avec historisation sur 7 jours)
 * circus.log : log circus
 * manage_duplicator_ftp.log : log du manager
-* sprinkler_*.stderr et sprinkler_*.stdout : logs des sprinklers
-* carrier_*.stderr et carrier_*.stdout : logs des carriers
+* sprinkler_\*.stderr et sprinkler_\*.stdout : logs des sprinklers
+* carrier_\*.stderr et carrier_\*.stdout : logs des carriers
 
 ## Lancement
 * Définir CONTAINER_NAME et SERVICE_NAME
@@ -204,6 +204,8 @@ Le container définit plusieurs variables d'environnement (modifiables au lancem
 * Définir CONSUL
 * Définir éventuellement CONSUL_COLLECTD_SERVICE
 * Définir éventuellement des volumes (-v xxxx:yyyy)
+```
 docker run -d --restart=always -p 20:20 -p 21:21 -p 21100-21110:21100-21110 --name=${CONTAINER_NAME} -e SERVICE_NAME=${SERVICE_NAME} -e DUPLICATORFTP_CONSUL=${CONSUL} -e AUTOCLEANFTP_PASV_ADDRESS=`hostname -i` [-e DUPLICATORFTP_HOSTNAME=${CONTAINER_NAME} -e DUPLICATORFTP_CONSUL_COLLECTD_SERVICE=${CONSUL_COLLECTD_SERVICE}] [volumes] ${IMAGE_NAME}
+```
 
 
