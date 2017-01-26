@@ -20,6 +20,7 @@ Le fonctionnement est piloté par le shell python manage_duplicator_ftp.py, cron
 * Création des users et home directory correspondant à chaque voie ftp, sur /data (répertoire accessible depuis l'extérieur du container)
 * Fabrication (ou mise à jour) "à la volée" du fichier circus.ini permettant de configurer le lancement par Circus d'un "watcher" par voie ftp (shell sprinkler.py) et pour chaque voie d'un watcher par subscriber (shell carrier.py).
 * Rechargement du fichier circus.ini (circusctl reloadconfig) : lancement des nouveaux watchers (nouvelles voie ftp ou nouveaux subscribers), arrêt de ceux qui ne sont plus pertinents, relance de ceux pour lesquels la configuration consul a été modifiée (via l'utilisation d'une clef dans la commande de lancement du watcher)
+* Si la variable DUPLICATORFTP_CONSUL_COLLECTD_SERVICE (identification d'un service collectd dans Consul) est renseignée, on lance (ou relance) le service collectd pour logger des informations sur les fichiers présents dans les arborescences traitées par les différents watchers (sprinklers et carriers), via le plugin filecount de collectd
 * Exemple de fichier circus.ini
 ```
 [circus]
@@ -177,11 +178,17 @@ Exemples :
 
 ## Paramètres
 Le container définit plusieurs variables d'environnement (modifiables au lancement du container)
-* DUPLICATORFTP_CONSUL : url d'accès à Consul
+* DUPLICATORFTP_CONSUL : url d'accès à Consul (nécessaire)
 * DUPLICATORFTP_CIRCUS_LEVEL : niveau de log dans circus
 * DUPLICATORFTP_CIRCUS_MAX_AGE, DUPLICATORFTP_MAX_AGE_VARIANCE et DUPLICATORFTP_GRACEFUL_TIMEOUT : paramètres circus pour piloter la relance des watchers
 * DUPLICATORFTP_CARRIER_MAX_AGE : durée avant abandon de la tentative de transfert d'un fichier
 * DUPLICATORFTP_LOG_LEVEL : niveau de log
+* DUPLICATORFTP_CONSUL_COLLECTD_SERVICE (optionnel) : identification du service collectd dans Consul
+* DUPLICATORFTP_HOSTNAME : (optionnel, en lien avec le précédent) : identification du hostname qui sera transmis à collectd (a priori le CONTAINER_NAME du container ftp_duplicator)
+* AUTOCLEANFTP_USERS, AUTOCLEANFTP_PASSWORDS, AUTOCLEANFTP_UIDS, AUTOCLEANFTP_LIFETIMES : doivent être vides au lancement, ne pas les modifier (mise à jour des variables d'environnement du container thefab/autoclean-vsftpd dont hérite ftpduplicator, ces variables seront modifiées "à la volée" au fonctionnement)
+* AUTOCLEANFTP_PASV_ADDRESS : à positionner à `hostname -i` (ip de la machine sur laquelle on lance le container ftpduplicator)
+* AUTOCLEANFTP_LEVEL=silent et AUTOCLEANFTP_SYSLOG=0 : ne pas modifier a priori
+* PYTHONUNBUFFERED=1 : nécessaire pour les watchers circus
 
 ## Fichiers de log
 (sur /var/log, avec historisation sur 7 jours)
@@ -190,6 +197,12 @@ Le container définit plusieurs variables d'environnement (modifiables au lancem
 * sprinkler_*.stderr et sprinkler_*.stdout : logs des sprinklers
 * carrier_*.stderr et carrier_*.stdout : logs des carriers
 
-
+## Lancement
+* Définir CONTAINER_NAME et SERVICE_NAME
+* IMAGE_NAME=ftp-duplicator:latest
+* Définir CONSUL
+* Définir éventuellement CONSUL_COLLECTD_SERVICE
+* Définir éventuellement des volumes (-v xxxx:yyyy)
+docker run -d --restart=always -p 20:20 -p 21:21 -p 21100-21110:21100-21110 --name=${CONTAINER_NAME} -e SERVICE_NAME=${SERVICE_NAME} -e DUPLICATORFTP_CONSUL=${CONSUL} -e AUTOCLEANFTP_PASV_ADDRESS=`hostname -i` [-e DUPLICATORFTP_HOSTNAME=${CONTAINER_NAME} -e DUPLICATORFTP_CONSUL_COLLECTD_SERVICE=${CONSUL_COLLECTD_SERVICE}] [volumes] ${IMAGE_NAME}
 
 

@@ -3,6 +3,7 @@ MAINTAINER Jean-Baptiste VESLIN <jean-baptiste.veslin@meteo.fr>
 
 # AutocleanFtp variables for users creation must be empty.
 # They will be defined on the fly with consul
+# Set AUTOCLEANFTP_PASV_ADDRESS to `hostname -i`
 # PYTHONUNBUFFERED is important for circus watchers logs
 ENV DUPLICATORFTP_CONSUL=137.129.47.64:80 \
     DUPLICATORFTP_CIRCUS_LEVEL=error \
@@ -17,6 +18,7 @@ ENV DUPLICATORFTP_CONSUL=137.129.47.64:80 \
     AUTOCLEANFTP_PASSWORDS= \
     AUTOCLEANFTP_UIDS= \
     AUTOCLEANFTP_LIFETIMES= \
+    AUTOCLEANFTP_PASV_ADDRESS= \
     AUTOCLEANFTP_LEVEL=silent \
     AUTOCLEANFTP_SYSLOG=0 \
     PYTHONUNBUFFERED=1
