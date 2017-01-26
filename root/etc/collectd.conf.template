@@ -1,0 +1,53 @@
+#
+# Config file for collectd(1).
+# Please read collectd.conf(5) for a list of options.
+# http://collectd.org/
+#
+
+##############################################################################
+# Global                                                                     #
+#----------------------------------------------------------------------------#
+# Global settings for the daemon.                                            #
+##############################################################################
+
+Hostname    "@@@HOSTNAME@@@"
+FQDNLookup   false
+BaseDir     "/var/lib/collectd"
+PIDFile     "/var/run/collectd.pid"
+PluginDir   "/usr/lib64/collectd"
+TypesDB     "/usr/share/collectd/types.db"
+Interval     10
+Timeout      2
+ReadThreads  5
+
+##############################################################################
+# LoadPlugin section                                                         #
+#----------------------------------------------------------------------------#
+# Lines beginning with a single `#' belong to plugins which have been built  #
+# but are disabled by default.                                               #
+#                                                                            #
+# Lines begnning with `##' belong to plugins which have not been built due   #
+# to missing dependencies or because they have been deactivated explicitly.  #
+##############################################################################
+ 
+LoadPlugin network
+LoadPlugin filecount
+LoadPlugin logfile
+<Plugin logfile>
+    LogLevel info
+    File "/var/log/collectd.log"
+    Timestamp true
+</Plugin>
+
+##############################################################################
+# Plugin configuration                                                       #
+#----------------------------------------------------------------------------#
+# In this section configuration stubs for each plugin are provided. A desc-  #
+# ription of those options is available in the collectd.conf(5) manual page. #
+##############################################################################
+
+<Plugin network>
+    <Server "@@@SERVER_COLLECTD_IP@@@" "@@@SERVER_COLLECTD_PORT@@@">
+        SecurityLevel None
+    </Server>
+</Plugin>

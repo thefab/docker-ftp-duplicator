@@ -2,4 +2,4 @@
 
 mkdir -p /build
 
-yum --enablerepo=epel install -y python-requests
+yum --enablerepo=epel install -y python-requests collectd

@@ -53,6 +53,7 @@ if Consul == None:
           +"DUPLICATORFTP_CONSUL not defined"
     exit(1)
 
+# Recuperation dans consul de la configuration du ftpduplicator
 url = "http://%s/v1/kv/ftp_duplicator/?recurse" % Consul
 reply = requests.get(url)
 if reply.status_code != 200:
@@ -108,6 +109,8 @@ for res in result:
                         subscr2['Name'] = "%s-%s-%s:%d" % (voie, lsplit[4],
                                                            subscr2['HostId'],
                                                            subscr2['Port'])
+                        subscr2['Filecount_name'] = "%s:%s" % (
+                            res2['Service']['ID'].split(':')[1], voie )
                         subscr2['Modify_index'] = \
                             res2['Service']['ModifyIndex'] + res['ModifyIndex']
                         subscr2['Directory'] = "/data/%s" % subscr2['Name']
@@ -122,7 +125,8 @@ for res in result:
                 else:
                     subscr['HostId'] = ''
                     subscr['Port'] = ''
-                    subscr['Name'] = "%s-%s" %(voie, lsplit[4])
+                    subscr['Name'] = "%s-%s" % (voie, lsplit[4])
+                    subscr['Filecount_name'] = "%s" % lsplit[4]
                     subscr['Modify_index'] = res['ModifyIndex']
                     subscr['Directory'] = "/data/%s" % subscr['Name']
                     cmd = "%s %s %s %s" \
@@ -233,4 +237,42 @@ for dir in list_dir:
                 os.system("/usr/sbin/userdel -r %s" % dir)
                 print "%s : User %s and Directory /data/%s removed" % (now(),
                       dir, dir)
+
+# Lancement eventuel de collectd
+# Hostname
+Hostname = os.environ.get("DUPLICATORFTP_HOSTNAME")
+# Recuperation eventuelle dans Consul de l'ip et du port du server collectd
+Collectd = False
+Service_collectd = os.environ.get("DUPLICATORFTP_CONSUL_COLLECTD_SERVICE")
+if not ( Service_collectd == None and Service_collectd == '' ):
+    url = "http://%s/v1/health/service/%s" % (Consul, Service_collectd)
+    reply = requests.get(url)
+    if reply.status_code == 200:
+        Collectd = True
+        result = reply.json()
+        for res in result:
+            Server_collectd_ip = res['Service']['Address']
+            Server_collectd_port = res['Service']['Port']
+        
+        #Fabrication de /etc/collectd.conf a partir du template
+        cmd="cat /etc/collectd.conf.template | sed 's/@@@HOSTNAME@@@/%s/g' | sed 's/@@@SERVER_COLLECTD_IP@@@/%s/g' | sed 's/@@@SERVER_COLLECTD_PORT@@@/%s/g' > /tmp/collectd.conf" % ( Hostname, Server_collectd_ip, Server_collectd_port )
+        os.system(cmd)
+        #Configuration du plugin filecount
+        with open('/tmp/collectd.conf', 'a') as new_collectd:
+            new_collectd.write("<Plugin filecount>\n")
+            for v in voies:
+                new_collectd.write('    <Directory "/data/%s">\n' % v['Name'])
+                new_collectd.write(
+                    '        Instance "tmp_files_voie_%s"\n' % v['Name'])
+                new_collectd.write('    </Directory>\n')
+            for c in carriers:
+                new_collectd.write('    <Directory "%s">\n' % c['Directory'])
+                new_collectd.write(
+                    '        Instance "tmp_files_%s"\n' % c['Filecount_name'])
+                new_collectd.write('    </Directory>\n')
+            new_collectd.write("</Plugin>\n")
+        #On redemarre le service collectd si la conf a change
+        if filecmp.cmp('/tmp/collectd.conf', '/etc/collectd.conf') == False:
+            shutil.move('/tmp/collectd.conf', '/etc/collectd.conf')
+            os.system("/sbin/service collectd restart")
 
