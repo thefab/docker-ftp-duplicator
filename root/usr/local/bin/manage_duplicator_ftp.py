@@ -1,7 +1,6 @@
 #!/bin/env python
 # -*- coding: utf-8 -*-
 #
-#Il ne faudra pas oublier de croner ce shell. Frequence ?
 import os
 import filecmp
 import shutil
@@ -71,6 +70,7 @@ voie = ''
 voies = []
 carriers = []
 watched_directories = []
+subscribers = []
 settings = {}
 for res in result:
     if res['Key'].startswith('ftp_duplicator/incoming_directories/'):
@@ -275,4 +275,8 @@ if not ( Service_collectd == None and Service_collectd == '' ):
         if filecmp.cmp('/tmp/collectd.conf', '/etc/collectd.conf') == False:
             shutil.move('/tmp/collectd.conf', '/etc/collectd.conf')
             os.system("/sbin/service collectd restart")
-
+        else:
+            #Securite en cas d arret du service collectd
+            ret=subprocess.call("/sbin/service collectd status", shell=True)
+            if ret != 0:
+                os.system("/sbin/service collectd start")
