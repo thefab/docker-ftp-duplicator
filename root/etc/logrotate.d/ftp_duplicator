@@ -6,8 +6,10 @@
 /var/log/carrier_*.stderr
 {
     daily
-    rotate 7
+    rotate 3
     nocompress
     missingok
+    notifempty
     copytruncate
+    maxage 5
 }
